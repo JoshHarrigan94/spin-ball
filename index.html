@@ -164,6 +164,28 @@ h1 {
 
 /* ---------- CONTROL PANEL ---------- */
 
+body.focus-mode .control-panel {
+  opacity: 0.22;
+  transform: translateY(18px);
+}
+
+body.focus-mode .top-hud {
+  opacity: 0.42;
+}
+
+body.focus-mode .side-panel {
+  opacity: 0.22;
+}
+
+.control-panel,
+.top-hud,
+.side-panel {
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease,
+    filter 0.35s ease;
+}
+
 .control-panel {
   position: fixed;
   left: 14px;
@@ -574,6 +596,62 @@ const MODES = {
   }
 };
 
+const BALL_FEEL = {
+  glass: {
+    frictionBonus: 0,
+    weight: 1,
+    sensitivityBonus: 1,
+    wobbleBonus: 1,
+    rpmBonus: 1,
+    particleBonus: 1
+  },
+
+  chrome: {
+    frictionBonus: 0.004,
+    weight: 0.75,
+    sensitivityBonus: 1.08,
+    wobbleBonus: 0.45,
+    rpmBonus: 1.15,
+    particleBonus: 0.7
+  },
+
+  lava: {
+    frictionBonus: -0.002,
+    weight: 0.9,
+    sensitivityBonus: 1.18,
+    wobbleBonus: 1.8,
+    rpmBonus: 1.08,
+    particleBonus: 1.8
+  },
+
+  void: {
+    frictionBonus: -0.004,
+    weight: 1.8,
+    sensitivityBonus: 0.75,
+    wobbleBonus: 0.55,
+    rpmBonus: 1.35,
+    particleBonus: 1.2
+  },
+
+  gel: {
+    frictionBonus: -0.001,
+    weight: 1.1,
+    sensitivityBonus: 0.95,
+    wobbleBonus: 2.2,
+    rpmBonus: 0.95,
+    particleBonus: 1.1
+  },
+
+  custom: {
+    frictionBonus: 0,
+    weight: 1,
+    sensitivityBonus: 1,
+    wobbleBonus: 1,
+    rpmBonus: 1,
+    particleBonus: 1
+  }
+};
+
 const UNLOCKS = {
   chrome: {
     label: "Chrome Ball",
@@ -736,7 +814,10 @@ class LightingSystem {
       3 + Math.cos(time * 0.0012);
 
     this.warm.intensity =
-      2 + spinPower * 10;
+  2 + spinPower * 15;
+
+this.rim.intensity =
+  2.7 + spinPower * 8;
   }
 }
 
@@ -940,13 +1021,20 @@ class BallManager {
       2.2;
 
     this.glow.material.opacity =
-      0.07 + spinPower * 0.9;
+  0.07 + spinPower * 1.25;
+
+this.glow.scale.setScalar(
+  1 + spinPower * 1.2
+);
 
     this.floor.scale.x =
-      1.1 + spinPower * 3;
+  1.1 + spinPower * 4.2;
 
-    this.floor.material.opacity =
-      0.18 + spinPower * 1.2;
+this.floor.scale.y =
+  0.22 + spinPower * 0.35;
+
+this.floor.material.opacity =
+  0.16 + spinPower * 1.45;
   }
 }
 
@@ -1123,7 +1211,7 @@ class SpinPhysics {
     this.particles = particleSystem;
 
     this.mode = MODES.smooth;
-
+    this.ballFeel = BALL_FEEL.glass;
     this.vx = 0.006;
     this.vy = 0.012;
 
@@ -1148,6 +1236,12 @@ class SpinPhysics {
     this.mode = MODES[modeName];
     showToast(`${this.mode.label} Mode`);
   }
+  
+  updateBallFeel() {
+  this.ballFeel =
+    BALL_FEEL[this.ball.type] ||
+    BALL_FEEL.glass;
+}
 
   bindInput() {
     window.addEventListener("pointerdown", event => {
@@ -1166,15 +1260,19 @@ class SpinPhysics {
       const dx = event.clientX - this.lastX;
       const dy = event.clientY - this.lastY;
 
-      this.vx =
-        (dy / dt) *
-        this.mode.sensitivity /
-        this.mode.weight;
+      this.updateBallFeel();
 
-      this.vy =
-        (dx / dt) *
-        this.mode.sensitivity /
-        this.mode.weight;
+this.vx =
+  (dy / dt) *
+  this.mode.sensitivity *
+  this.ballFeel.sensitivityBonus /
+  (this.mode.weight * this.ballFeel.weight);
+
+this.vy =
+  (dx / dt) *
+  this.mode.sensitivity *
+  this.ballFeel.sensitivityBonus /
+  (this.mode.weight * this.ballFeel.weight);
 
       this.ball.rotate(
         this.vx,
@@ -1188,16 +1286,19 @@ class SpinPhysics {
       this.flickPower = flickStrength;
 
       this.wobble = Math.min(
-        0.18,
-        flickStrength *
-          0.0025 *
-          this.mode.wobble *
-          8
-      );
+  0.24,
+  flickStrength *
+    0.0025 *
+    this.mode.wobble *
+    this.ballFeel.wobbleBonus *
+    8
+);
 
       if (flickStrength > 55) {
-        this.particles.spawn(6);
-      }
+  this.particles.spawn(
+    Math.round(6 * this.ballFeel.particleBonus)
+  );
+}
 
       this.lastDirection = Math.sign(dx || 1);
 
@@ -1210,22 +1311,30 @@ class SpinPhysics {
   this.dragging = false;
 
   window.dispatchEvent(
-    new CustomEvent("spincore:flick", {
-      detail: {
-        flickPower: this.flickPower,
-        rpm: this.rpm,
-        direction: this.lastDirection
-      }
-    })
-  );
+  new CustomEvent("spincore:flick", {
+    detail: {
+      flickPower: this.flickPower,
+      rpm: this.rpm,
+      direction: this.lastDirection,
+      vx: this.vx,
+      vy: this.vy
+    }
+  })
+);
 });
 
   impulse() {
-    this.vx +=
-      (Math.random() - 0.5) * 0.18;
+    this.updateBallFeel();
 
-    this.vy +=
-      (Math.random() > 0.5 ? 1 : -1) * 0.22;
+this.vx +=
+  (Math.random() - 0.5) *
+  0.18 *
+  this.ballFeel.sensitivityBonus;
+
+this.vy +=
+  (Math.random() > 0.5 ? 1 : -1) *
+  0.22 *
+  this.ballFeel.sensitivityBonus;
 
     this.wobble = 0.16;
     this.flickPower = 100;
@@ -1263,13 +1372,23 @@ class SpinPhysics {
       this.vy * 0.18
     );
 
-    this.vx *= this.dragging
-      ? 0.986
-      : this.mode.friction;
+    this.updateBallFeel();
 
-    this.vy *= this.dragging
-      ? 0.986
-      : this.mode.friction;
+const friction = Math.min(
+  0.999,
+  Math.max(
+    0.96,
+    this.mode.friction + this.ballFeel.frictionBonus
+  )
+);
+
+this.vx *= this.dragging
+  ? 0.986
+  : friction;
+
+this.vy *= this.dragging
+  ? 0.986
+  : friction;
 
     this.wobble *= 0.94;
     this.flickPower *= 0.92;
@@ -1281,22 +1400,26 @@ class SpinPhysics {
       );
 
     this.rpm =
-      Math.round(
-        spinPower * CONFIG.rpm.multiplier
-      );
+  Math.round(
+    spinPower *
+    CONFIG.rpm.multiplier *
+    this.ballFeel.rpmBonus
+  );
 
     if (this.rpm > this.best) {
       this.best = this.rpm;
     }
 
     return {
-      spinPower,
-      wobble: this.wobble,
-      rpm: this.rpm,
-      best: this.best,
-      flickPower: this.flickPower,
-      direction: this.lastDirection
-    };
+  spinPower,
+  wobble: this.wobble,
+  rpm: this.rpm,
+  best: this.best,
+  flickPower: this.flickPower,
+  direction: this.lastDirection,
+  vx: this.vx,
+  vy: this.vy
+};
   }
 }
 
@@ -1316,13 +1439,13 @@ class SaveSystem {
       totalFlicks: 0,
       bestCombo: 0,
       unlocked: {
-        glass: true,
-        chrome: true,
-        lava: true,
-        void: true,
-        gel: true,
-        custom: true
-      }
+  glass: true,
+  chrome: false,
+  lava: false,
+  void: false,
+  gel: false,
+  custom: false
+}
     };
 
     this.load();
@@ -1448,6 +1571,135 @@ class ComboSystem {
   }
 }
 
+/* ---------- TRICK SYSTEM ---------- */
+
+class TrickSystem {
+  constructor(saveSystem) {
+    this.save = saveSystem;
+
+    this.lastDirection = 0;
+    this.lastRPM = 0;
+    this.deadStopArmed = false;
+  }
+
+  evaluate(spinState) {
+    const tricks = [];
+
+    const power = spinState.flickPower;
+    const rpm = spinState.rpm;
+    const direction = spinState.direction;
+
+    const diagonal =
+      Math.abs(spinState.vx || 0) > 0.025 &&
+      Math.abs(spinState.vy || 0) > 0.025;
+
+    const reversed =
+      this.lastDirection !== 0 &&
+      direction !== this.lastDirection;
+
+    if (power > 95) {
+      tricks.push("Perfect Flick");
+    }
+
+    if (reversed && power > 55) {
+      tricks.push("Reverse Spin");
+    }
+
+    if (diagonal && power > 60) {
+      tricks.push("Orbit Flick");
+    }
+
+    if (this.lastRPM > 700 && rpm < 120 && this.deadStopArmed) {
+      tricks.push("Dead Stop");
+      this.deadStopArmed = false;
+    }
+
+    if (rpm > 700) {
+      this.deadStopArmed = true;
+    }
+
+    if (direction !== 0) {
+      this.lastDirection = direction;
+    }
+
+    this.lastRPM = rpm;
+
+    return tricks;
+  }
+
+  announce(tricks) {
+    if (!tricks.length) return;
+
+    const bestTrick = tricks[tricks.length - 1];
+
+    showToast(bestTrick);
+
+    if (bestTrick === "Dead Stop") {
+      haptic(70);
+    } else if (bestTrick === "Orbit Flick") {
+      haptic(42);
+    } else {
+      haptic(28);
+    }
+  }
+
+  reset() {
+    this.lastDirection = 0;
+    this.lastRPM = 0;
+    this.deadStopArmed = false;
+  }
+}
+
+/* ---------- FLOW STATE SYSTEM ---------- */
+
+class FlowStateSystem {
+  constructor() {
+    this.active = false;
+    this.charge = 0;
+    this.threshold = 720;
+    this.activationCharge = 120;
+    this.decayRate = 2.2;
+  }
+
+  update(spinState) {
+    if (spinState.rpm >= this.threshold) {
+      this.charge += 1.8;
+    } else {
+      this.charge -= this.decayRate;
+    }
+
+    this.charge = Math.max(
+      0,
+      Math.min(this.activationCharge, this.charge)
+    );
+
+    const wasActive = this.active;
+
+    this.active =
+      this.charge >= this.activationCharge;
+
+    if (!wasActive && this.active) {
+      showToast("FLOW STATE");
+      haptic(70);
+    }
+
+    if (wasActive && !this.active && this.charge < 20) {
+      showToast("Flow Lost");
+    }
+
+    return {
+      active: this.active,
+      charge: this.charge,
+      progress: this.charge / this.activationCharge
+    };
+  }
+
+  reset() {
+    this.active = false;
+    this.charge = 0;
+  }
+}
+
 /* ---------- UNLOCK SYSTEM ---------- */
 
 class UnlockSystem {
@@ -1482,6 +1734,55 @@ class UnlockSystem {
 
     showToast(`Unlocked ${BALLS[ball].label}`);
     haptic(60);
+  }
+}
+
+/* ---------- LOCKED BALL UI SYSTEM ---------- */
+
+class UnlockUI {
+  constructor(saveSystem) {
+    this.save = saveSystem;
+
+    this.buttons = document.querySelectorAll(
+      "#ballButtons button"
+    );
+
+    this.refresh();
+  }
+
+  refresh() {
+    this.buttons.forEach(button => {
+      const ball = button.dataset.ball;
+      const unlocked = this.save.data.unlocked[ball];
+
+      if (unlocked) {
+        button.textContent = BALLS[ball].label;
+        button.style.opacity = "1";
+        button.style.filter = "none";
+        return;
+      }
+
+      button.textContent = `${BALLS[ball].label} 🔒`;
+      button.style.opacity = "0.55";
+      button.style.filter = "grayscale(1)";
+    });
+  }
+
+  interceptLocked(ball) {
+    const unlocked = this.save.data.unlocked[ball];
+
+    if (unlocked) return false;
+
+    const unlockData = UNLOCKS[ball];
+
+    if (unlockData) {
+      showToast(unlockData.requirement);
+    } else {
+      showToast("Locked");
+    }
+
+    haptic(12);
+    return true;
   }
 }
 
@@ -1557,10 +1858,11 @@ class UploadSystem {
 ========================================================= */
 
 class UIManager {
-  constructor(ballManager, physics, comboSystem) {
-    this.ballManager = ballManager;
-    this.physics = physics;
-    this.comboSystem = comboSystem;
+  constructor(ballManager, physics, comboSystem, unlockUI) {
+  this.ballManager = ballManager;
+  this.physics = physics;
+  this.comboSystem = comboSystem;
+  this.unlockUI = unlockUI;
 
     this.bindBallButtons();
     this.bindModeButtons();
@@ -1575,8 +1877,15 @@ class UIManager {
 
         const ballType = event.target.dataset.ball;
 
-        setActiveButton("#ballButtons", event.target);
-        this.ballManager.setType(ballType);
+if (this.unlockUI.interceptLocked(ballType)) {
+
+  return;
+
+}
+
+setActiveButton("#ballButtons", event.target);
+
+this.ballManager.setType(ballType);
       });
   }
 
@@ -1612,8 +1921,16 @@ class UIManager {
         this.physics.reset();
         this.comboSystem.reset();
 
-        UI.comboValue.textContent = 0;
-        showToast("Reset");
+if (window.spinCoreApp?.trickSystem) {
+  window.spinCoreApp.trickSystem.reset();
+}
+
+if (window.spinCoreApp?.flowStateSystem) {
+  window.spinCoreApp.flowStateSystem.reset();
+}
+
+UI.comboValue.textContent = 0;
+showToast("Reset");
       });
   }
 
@@ -1631,6 +1948,18 @@ class UIManager {
         100,
         spinState.rpm / CONFIG.rpm.meterDivisor
       )}%`;
+      const focusMode =
+  spinState.rpm > 520;
+
+document.body.classList.toggle(
+  "focus-mode",
+  focusMode
+);
+
+document.body.style.filter =
+  spinState.rpm > 720
+    ? "saturate(1.25) contrast(1.08)"
+    : "saturate(1) contrast(1)";
   }
 }
 
@@ -1677,26 +2006,41 @@ class SpinCoreApp {
 
     this.comboSystem =
       new ComboSystem(this.saveSystem);
+    this.trickSystem =
+      new TrickSystem(this.saveSystem);
 
     this.unlockSystem =
       new UnlockSystem(this.saveSystem);
+    this.flowStateSystem =
+      new FlowStateSystem();
 
     this.uploadSystem =
       new UploadSystem(this.ballManager);
 
-    this.uiManager =
-      new UIManager(
-        this.ballManager,
-        this.physics,
-        this.comboSystem
-      );
+    this.unlockUI =
+  new UnlockUI(
+    this.saveSystem
+  );
+
+this.uiManager =
+  new UIManager(
+    this.ballManager,
+    this.physics,
+    this.comboSystem,
+    this.unlockUI
+  );
 
     window.addEventListener(
-      "spincore:flick",
-      event => {
-        this.comboSystem.onFlick(event.detail);
-      }
-    );
+  "spincore:flick",
+  event => {
+    this.comboSystem.onFlick(event.detail);
+
+    const tricks =
+      this.trickSystem.evaluate(event.detail);
+
+    this.trickSystem.announce(tricks);
+  }
+);
 
     showToast("SpinCore Ready");
     this.animate();
@@ -1713,6 +2057,9 @@ class SpinCoreApp {
     const comboState =
       this.comboSystem.update();
 
+    const flowState =
+      this.flowStateSystem.update(spinState);
+
     this.saveSystem.updateBestRPM(
       spinState.rpm
     );
@@ -1721,28 +2068,39 @@ class SpinCoreApp {
       spinState,
       comboState
     );
+    this.unlockUI.refresh();
 
     this.ballManager.updateVisuals(
-      time,
-      spinState.spinPower,
-      spinState.wobble
-    );
+  time,
+  flowState.active
+    ? spinState.spinPower * 1.35
+    : spinState.spinPower,
+  flowState.active
+    ? spinState.wobble * 1.4
+    : spinState.wobble
+);
 
     this.trailSystem.update(
-      time,
-      spinState.spinPower
-    );
+  time,
+  flowState.active
+    ? spinState.spinPower * 1.8
+    : spinState.spinPower
+);
 
     this.particleSystem.update();
 
     this.environmentSystem.update(
-      spinState.spinPower
-    );
+  flowState.active
+    ? spinState.spinPower * 2.2
+    : spinState.spinPower
+);
 
     this.lightingSystem.update(
-      time,
-      spinState.spinPower
-    );
+  time,
+  flowState.active
+    ? spinState.spinPower * 1.8
+    : spinState.spinPower
+);
 
     this.uiManager.update(
       spinState,
@@ -1754,7 +2112,7 @@ class SpinCoreApp {
   }
 }
 
-new SpinCoreApp();
+window.spinCoreApp = new SpinCoreApp();
 
 </script>
 
