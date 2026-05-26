@@ -4,536 +4,1759 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
 <title>SpinCore</title>
+
 <style>
-*{box-sizing:border-box}
-:root{
-  --glass:rgba(255,255,255,.1);
-  --line:rgba(255,255,255,.16);
-  --hot:#ff7a18;
-  --blue:#74d7ff;
+/* =========================================================
+   SPINCORE — PERMANENT STYLE LAYER
+   Future parts should NOT replace this unless requested.
+========================================================= */
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
-body{
-  margin:0;
-  overflow:hidden;
-  min-height:100vh;
-  color:white;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+
+:root {
+  --bg-dark: #050713;
+  --bg-mid: #101a35;
+  --glass: rgba(255,255,255,0.10);
+  --line: rgba(255,255,255,0.16);
+  --text-soft: rgba(255,255,255,0.68);
+  --blue: #74d7ff;
+  --purple: #a78bfa;
+  --orange: #ff7a18;
+  --green: #9cff8a;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  color: white;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at 50% 20%,#243b7a 0%,transparent 35%),
-    radial-gradient(circle at 80% 85%,#431d69 0%,transparent 32%),
-    linear-gradient(160deg,#050713,#101a35 60%,#070a14);
-  touch-action:none;
+    radial-gradient(circle at 50% 16%, #243b7a 0%, transparent 34%),
+    radial-gradient(circle at 78% 84%, #431d69 0%, transparent 32%),
+    linear-gradient(160deg, var(--bg-dark), var(--bg-mid) 62%, #070a14);
+  touch-action: none;
 }
-canvas{display:block}
-.top{
-  position:fixed;
-  top:14px;
-  left:14px;
-  right:14px;
-  z-index:10;
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  pointer-events:none;
+
+button,
+input {
+  font: inherit;
 }
-.card{
-  pointer-events:auto;
-  padding:12px 14px;
-  border:1px solid var(--line);
-  border-radius:22px;
-  background:rgba(8,12,24,.48);
-  backdrop-filter:blur(18px);
-  box-shadow:0 18px 50px rgba(0,0,0,.28);
+
+button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: var(--glass);
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
 }
-h1{font-size:17px;margin:0}
-.small{font-size:12px;opacity:.68;margin-top:2px}
-.stat{
-  text-align:right;
-  min-width:110px;
+
+button.active {
+  background: white;
+  color: #111827;
 }
-.big{
-  font-size:24px;
-  font-weight:900;
-  letter-spacing:-.04em;
+
+button:active {
+  transform: scale(0.94);
 }
-.bottom{
-  position:fixed;
-  left:14px;
-  right:14px;
-  bottom:14px;
-  z-index:10;
-  padding:13px;
-  display:grid;
-  gap:10px;
-  border:1px solid var(--line);
-  border-radius:26px;
-  background:rgba(8,12,24,.58);
-  backdrop-filter:blur(18px);
+
+canvas {
+  display: block;
 }
-.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-button{
-  border:1px solid var(--line);
-  border-radius:999px;
-  padding:10px 13px;
-  background:var(--glass);
-  color:white;
-  font-weight:800;
-  cursor:pointer;
+
+/* ---------- HUD ---------- */
+
+.top-hud {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
 }
-button.active{
-  background:white;
-  color:#111827;
+
+.card {
+  pointer-events: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(8,12,24,0.50);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.28);
 }
-button:active{transform:scale(.94)}
-.meter{
-  height:9px;
-  border-radius:99px;
-  overflow:hidden;
-  background:rgba(255,255,255,.1);
+
+h1 {
+  font-size: 17px;
+  margin: 0;
+  letter-spacing: -0.03em;
 }
-.fill{
-  height:100%;
-  width:0%;
-  border-radius:99px;
-  background:linear-gradient(90deg,var(--blue),#a78bfa,var(--hot));
-  transition:width .08s linear;
+
+.subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-soft);
 }
-.toast{
-  position:fixed;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%) scale(.92);
-  z-index:20;
-  font-size:30px;
-  font-weight:1000;
-  opacity:0;
-  pointer-events:none;
-  text-shadow:0 10px 40px rgba(0,0,0,.6);
+
+.stat-card {
+  min-width: 108px;
+  text-align: right;
 }
-.toast.show{
-  animation:pop .7s ease;
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
-@keyframes pop{
-  0%{opacity:0;transform:translate(-50%,-50%) scale(.75)}
-  20%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}
-  100%{opacity:0;transform:translate(-50%,-58%) scale(1)}
+
+.stat-value {
+  font-size: 25px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.05em;
 }
-@media(min-width:760px){
-  .bottom{
-    left:50%;
-    right:auto;
-    transform:translateX(-50%);
-    width:720px;
+
+/* ---------- CENTRE FEEDBACK ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: 47%;
+  transform: translate(-50%, -50%) scale(0.9);
+  z-index: 20;
+  font-size: 30px;
+  font-weight: 1000;
+  letter-spacing: -0.05em;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  text-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+
+.toast.show {
+  animation: toast-pop 0.72s ease;
+}
+
+@keyframes toast-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -62%) scale(1);
+  }
+}
+
+/* ---------- CONTROL PANEL ---------- */
+
+.control-panel {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 10;
+  padding: 13px;
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: rgba(8,12,24,0.62);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.32);
+}
+
+.meter {
+  height: 9px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.10);
+}
+
+.meter-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--blue), var(--purple), var(--orange));
+  transition: width 0.08s linear;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.section-label {
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: -2px;
+}
+
+.file-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+/* ---------- SIDE STATS ---------- */
+
+.side-panel {
+  position: fixed;
+  top: 98px;
+  right: 14px;
+  z-index: 10;
+  width: 118px;
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.mini-stat {
+  pointer-events: auto;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(8,12,24,0.44);
+  backdrop-filter: blur(16px);
+  text-align: right;
+}
+
+.mini-stat .label {
+  font-size: 10px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.mini-stat .value {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 420px) {
+  .subtitle {
+    font-size: 11px;
+  }
+
+  .stat-card {
+    min-width: 92px;
+  }
+
+  .stat-value {
+    font-size: 23px;
+  }
+
+  button {
+    padding: 9px 11px;
+    font-size: 13px;
+  }
+
+  .side-panel {
+    display: none;
+  }
+
+  .toast {
+    font-size: 26px;
+  }
+}
+
+@media (min-width: 760px) {
+  .control-panel {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 730px;
   }
 }
 </style>
 </head>
+
 <body>
 
-<div class="top">
+<header class="top-hud">
   <div class="card">
     <h1>SpinCore</h1>
-    <div class="small">Flick hard. Hold flow. Unlock feel.</div>
+    <div class="subtitle">A tactile 3D spin toy</div>
   </div>
-  <div class="card stat">
-    <div class="small">RPM</div>
-    <div class="big" id="rpm">0</div>
+
+  <div class="card stat-card">
+    <div class="stat-label">RPM</div>
+    <div class="stat-value" id="rpmValue">0</div>
   </div>
-</div>
+</header>
+
+<aside class="side-panel">
+  <div class="mini-stat">
+    <div class="label">Combo</div>
+    <div class="value" id="comboValue">0</div>
+  </div>
+
+  <div class="mini-stat">
+    <div class="label">Best</div>
+    <div class="value" id="bestValue">0</div>
+  </div>
+
+  <div class="mini-stat">
+    <div class="label">Ball</div>
+    <div class="value" id="ballValue">Glass</div>
+  </div>
+</aside>
 
 <div class="toast" id="toast">Perfect Flick</div>
 
-<div class="bottom">
-  <div class="meter"><div class="fill" id="fill"></div></div>
-  <div class="row" id="balls">
+<section class="control-panel">
+
+  <div class="meter">
+    <div class="meter-fill" id="rpmFill"></div>
+  </div>
+
+  <div class="row" id="ballButtons">
+    <div class="section-label">Ball Type</div>
     <button class="active" data-ball="glass">Glass</button>
     <button data-ball="chrome">Chrome</button>
     <button data-ball="lava">Lava</button>
     <button data-ball="void">Void</button>
     <button data-ball="gel">Gel</button>
+    <button data-ball="custom">Custom</button>
   </div>
-  <div class="row" id="modes">
+
+  <div class="row" id="modeButtons">
+    <div class="section-label">Spin Feel</div>
     <button class="active" data-mode="smooth">Smooth</button>
     <button data-mode="heavy">Heavy</button>
     <button data-mode="ice">Ice</button>
     <button data-mode="wild">Wild</button>
   </div>
+
   <div class="row">
-    <button id="boost">Impulse</button>
-    <button id="brake">Brake</button>
-    <button id="reset">Reset</button>
+    <div class="section-label">Actions</div>
+    <button id="boostButton">Impulse</button>
+    <button id="brakeButton">Brake</button>
+    <button id="resetButton">Reset</button>
+
+    <label class="file-button">
+      <button type="button">Upload Skin</button>
+      <input id="imageUpload" type="file" accept="image/*" />
+    </label>
   </div>
-</div>
+
+  <div class="hint">
+    Flick across the ball. Faster flicks create combos, particles and unlocks.
+  </div>
+
+</section>
 
 <script type="module">
+/* =========================================================
+   SPINCORE — APP SCRIPT
+   IMPORTANT:
+   Do not delete this script.
+   Future parts are pasted into the labelled slots below.
+========================================================= */
+
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js";
 
-const scene=new THREE.Scene();
+/* =========================================================
+   SLOT 1 — UI REFERENCES
+========================================================= */
 
-const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.1,100);
-camera.position.set(0,0,4.4);
-
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
-renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.25;
-document.body.appendChild(renderer.domElement);
-
-const group=new THREE.Group();
-scene.add(group);
-
-const geo=new THREE.SphereGeometry(1,128,128);
-
-const materials={
-  glass:new THREE.MeshPhysicalMaterial({
-    color:0x71d7ff,metalness:.04,roughness:.05,
-    transmission:.35,thickness:.9,clearcoat:1,clearcoatRoughness:.03
-  }),
-  chrome:new THREE.MeshStandardMaterial({
-    color:0xddeaff,metalness:1,roughness:.14
-  }),
-  lava:new THREE.MeshStandardMaterial({
-    color:0xff5a1f,emissive:0x661400,emissiveIntensity:.65,
-    metalness:.16,roughness:.28
-  }),
-  void:new THREE.MeshStandardMaterial({
-    color:0x090914,emissive:0x160044,emissiveIntensity:.7,
-    metalness:.7,roughness:.2
-  }),
-  gel:new THREE.MeshPhysicalMaterial({
-    color:0xb6ff8a,metalness:.02,roughness:.12,
-    transmission:.18,clearcoat:1,clearcoatRoughness:.08
-  })
+const UI = {
+  rpmValue: document.getElementById("rpmValue"),
+  comboValue: document.getElementById("comboValue"),
+  bestValue: document.getElementById("bestValue"),
+  ballValue: document.getElementById("ballValue"),
+  rpmFill: document.getElementById("rpmFill"),
+  toast: document.getElementById("toast")
 };
 
-const ball=new THREE.Mesh(geo,materials.glass);
-group.add(ball);
-
-const wire=new THREE.Mesh(
-  geo,
-  new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.08})
-);
-group.add(wire);
-
-const glow=new THREE.Mesh(
-  new THREE.SphereGeometry(1.09,64,64),
-  new THREE.MeshBasicMaterial({color:0x71d7ff,transparent:true,opacity:.09})
-);
-group.add(glow);
-
-const floor=new THREE.Mesh(
-  new THREE.CircleGeometry(1.35,80),
-  new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.24})
-);
-floor.rotation.x=-Math.PI/2;
-floor.position.y=-1.35;
-floor.scale.y=.22;
-scene.add(floor);
-
-const stars=new THREE.Group();
-scene.add(stars);
-
-for(let i=0;i<130;i++){
-  const s=new THREE.Mesh(
-    new THREE.SphereGeometry(.006+Math.random()*.015,8,8),
-    new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.18+Math.random()*.4})
-  );
-  s.position.set(
-    (Math.random()-.5)*8,
-    (Math.random()-.5)*6,
-    -2-Math.random()*5
-  );
-  stars.add(s);
+function showToast(text) {
+  UI.toast.textContent = text;
+  UI.toast.classList.remove("show");
+  void UI.toast.offsetWidth;
+  UI.toast.classList.add("show");
 }
 
-const trailGeo=new THREE.BufferGeometry();
-const trailCount=140;
-const trailPositions=new Float32Array(trailCount*3);
-trailGeo.setAttribute("position",new THREE.BufferAttribute(trailPositions,3));
-const trail=new THREE.Points(
-  trailGeo,
-  new THREE.PointsMaterial({
-    color:0x8bdcff,
-    size:.035,
-    transparent:true,
-    opacity:.55,
-    blending:THREE.AdditiveBlending
-  })
-);
-scene.add(trail);
+function setActiveButton(groupSelector, clickedButton) {
+  document
+    .querySelectorAll(`${groupSelector} button`)
+    .forEach(button => button.classList.remove("active"));
 
-const particles=[];
-const particleGeo=new THREE.SphereGeometry(.018,8,8);
-for(let i=0;i<40;i++){
-  const p=new THREE.Mesh(
-    particleGeo,
-    new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0})
-  );
-  p.userData={life:0,v:new THREE.Vector3()};
-  scene.add(p);
-  particles.push(p);
+  clickedButton.classList.add("active");
 }
 
-scene.add(new THREE.AmbientLight(0x7f8cff,.75));
-
-const key=new THREE.DirectionalLight(0xffffff,3.1);
-key.position.set(3.5,4,5);
-scene.add(key);
-
-const rim=new THREE.DirectionalLight(0x66d9ff,2.7);
-rim.position.set(-4,2,-3);
-scene.add(rim);
-
-const warm=new THREE.PointLight(0xff8a35,2.4,7);
-warm.position.set(-2.5,-1.5,2);
-scene.add(warm);
-
-let mode={
-  friction:.992,
-  sensitivity:.09,
-  wobble:.08,
-  weight:1
-};
-
-const modes={
-  smooth:{friction:.992,sensitivity:.09,wobble:.08,weight:1},
-  heavy:{friction:.986,sensitivity:.055,wobble:.035,weight:1.6},
-  ice:{friction:.997,sensitivity:.075,wobble:.025,weight:.8},
-  wild:{friction:.991,sensitivity:.13,wobble:.16,weight:.7}
-};
-
-let vx=.006;
-let vy=.012;
-let dragging=false;
-let lastX=0,lastY=0,lastT=0;
-let wobble=0;
-let best=0;
-let combo=0;
-let ballType="glass";
-
-const rpmEl=document.getElementById("rpm");
-const fill=document.getElementById("fill");
-const toast=document.getElementById("toast");
-
-function setToast(text){
-  toast.textContent=text;
-  toast.classList.remove("show");
-  void toast.offsetWidth;
-  toast.classList.add("show");
+function haptic(ms = 18) {
+  if (navigator.vibrate) navigator.vibrate(ms);
 }
 
-function activate(parent,btn){
-  parent.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-}
+/* =========================================================
+   SLOT 2 — CONFIG
+   Future Part 2 will paste CONFIG here.
+========================================================= */
+const CONFIG = {
+  camera: {
+    fov: 45,
+    near: 0.1,
+    far: 100,
+    z: 4.4
+  },
 
-function setBall(type){
-  ballType=type;
-  ball.material=materials[type];
-  wire.material.opacity=type==="void"?.18:.08;
-  glow.material.color.set(
-    type==="lava"?0xff5a1f:
-    type==="void"?0x8b5cf6:
-    type==="gel"?0xb6ff8a:
-    type==="chrome"?0xe0f2fe:
-    0x71d7ff
-  );
-  trail.material.color.set(glow.material.color);
-}
+  render: {
+    maxPixelRatio: 2,
+    exposure: 1.25
+  },
 
-document.getElementById("balls").onclick=e=>{
-  if(e.target.tagName!=="BUTTON")return;
-  activate(e.currentTarget,e.target);
-  setBall(e.target.dataset.ball);
-};
+  ball: {
+    radius: 1,
+    segments: 128
+  },
 
-document.getElementById("modes").onclick=e=>{
-  if(e.target.tagName!=="BUTTON")return;
-  activate(e.currentTarget,e.target);
-  mode=modes[e.target.dataset.mode];
-  setToast(e.target.textContent+" Mode");
-};
-
-addEventListener("pointerdown",e=>{
-  dragging=true;
-  lastX=e.clientX;
-  lastY=e.clientY;
-  lastT=performance.now();
-});
-
-addEventListener("pointermove",e=>{
-  if(!dragging)return;
-
-  const now=performance.now();
-  const dt=Math.max(12,now-lastT);
-  const dx=e.clientX-lastX;
-  const dy=e.clientY-lastY;
-
-  vx=(dy/dt)*mode.sensitivity/mode.weight;
-  vy=(dx/dt)*mode.sensitivity/mode.weight;
-
-  ball.rotation.x+=vx;
-  ball.rotation.y+=vy;
-  wire.rotation.copy(ball.rotation);
-
-  const flick=Math.abs(dx)+Math.abs(dy);
-  wobble=Math.min(.18,flick*.0025*mode.wobble*8);
-
-  if(flick>55){
-    spawnParticles(10);
+  rpm: {
+    multiplier: 6200,
+    meterDivisor: 18
   }
+};
 
-  lastX=e.clientX;
-  lastY=e.clientY;
-  lastT=now;
-});
 
-addEventListener("pointerup",()=>{
-  dragging=false;
-  const power=Math.abs(vx)+Math.abs(vy);
-  if(power>.11){
-    combo++;
-    setToast(combo>2?`Combo x${combo}`:"Perfect Flick");
-    pulseHaptic(25);
-  }else{
-    combo=Math.max(0,combo-1);
+/* =========================================================
+   SLOT 3 — DATA
+   Future Part 2 will paste BALLS, MODES, UNLOCKS here.
+========================================================= */
+
+const BALLS = {
+  glass: {
+    label: "Glass",
+    glow: 0x74d7ff,
+    unlocked: true,
+    materialType: "physical",
+    material: {
+      color: 0x71d7ff,
+      metalness: 0.04,
+      roughness: 0.05,
+      transmission: 0.35,
+      thickness: 0.9,
+      clearcoat: 1,
+      clearcoatRoughness: 0.03
+    }
+  },
+
+  chrome: {
+    label: "Chrome",
+    glow: 0xe0f2fe,
+    unlocked: true,
+    materialType: "standard",
+    material: {
+      color: 0xddeaff,
+      metalness: 1,
+      roughness: 0.14
+    }
+  },
+
+  lava: {
+    label: "Lava",
+    glow: 0xff5a1f,
+    unlocked: true,
+    materialType: "standard",
+    material: {
+      color: 0xff5a1f,
+      emissive: 0x661400,
+      emissiveIntensity: 0.65,
+      metalness: 0.16,
+      roughness: 0.28
+    }
+  },
+
+  void: {
+    label: "Void",
+    glow: 0x8b5cf6,
+    unlocked: true,
+    materialType: "standard",
+    material: {
+      color: 0x090914,
+      emissive: 0x160044,
+      emissiveIntensity: 0.7,
+      metalness: 0.7,
+      roughness: 0.2
+    }
+  },
+
+  gel: {
+    label: "Gel",
+    glow: 0xb6ff8a,
+    unlocked: true,
+    materialType: "physical",
+    material: {
+      color: 0xb6ff8a,
+      metalness: 0.02,
+      roughness: 0.12,
+      transmission: 0.18,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08
+    }
+  },
+
+  custom: {
+    label: "Custom",
+    glow: 0xffffff,
+    unlocked: true,
+    materialType: "standard",
+    material: {
+      color: 0xffffff,
+      metalness: 0.08,
+      roughness: 0.28
+    }
   }
-});
-
-document.getElementById("boost").onclick=()=>{
-  vx+=(Math.random()-.5)*.18;
-  vy+=(Math.random()>.5?1:-1)*.22;
-  wobble=.16;
-  spawnParticles(22);
-  setToast("Impulse");
-  pulseHaptic(35);
 };
 
-document.getElementById("brake").onclick=()=>{
-  vx*=.18;
-  vy*=.18;
-  setToast("Brake");
-  pulseHaptic(12);
+const MODES = {
+  smooth: {
+    label: "Smooth",
+    friction: 0.992,
+    sensitivity: 0.09,
+    wobble: 0.08,
+    weight: 1
+  },
+
+  heavy: {
+    label: "Heavy",
+    friction: 0.986,
+    sensitivity: 0.055,
+    wobble: 0.035,
+    weight: 1.6
+  },
+
+  ice: {
+    label: "Ice",
+    friction: 0.997,
+    sensitivity: 0.075,
+    wobble: 0.025,
+    weight: 0.8
+  },
+
+  wild: {
+    label: "Wild",
+    friction: 0.991,
+    sensitivity: 0.13,
+    wobble: 0.16,
+    weight: 0.7
+  }
 };
 
-document.getElementById("reset").onclick=()=>{
-  vx=.006;
-  vy=.012;
-  wobble=0;
-  combo=0;
-  ball.rotation.set(0,0,0);
-  wire.rotation.set(0,0,0);
-  setToast("Reset");
+const UNLOCKS = {
+  chrome: {
+    label: "Chrome Ball",
+    requirement: "Reach 500 RPM"
+  },
+
+  lava: {
+    label: "Lava Ball",
+    requirement: "Reach 900 RPM"
+  },
+
+  void: {
+    label: "Void Ball",
+    requirement: "Reach 1200 RPM"
+  },
+
+  gel: {
+    label: "Gel Ball",
+    requirement: "Hit a 3x combo"
+  }
 };
 
-function pulseHaptic(ms){
-  if(navigator.vibrate) navigator.vibrate(ms);
-}
+/* =========================================================
+   SLOT 4 — CORE SCENE SYSTEMS
+   Future Part 3 will paste SceneManager + LightingSystem here.
+========================================================= */
 
-function spawnParticles(n){
-  for(let i=0;i<n;i++){
-    const p=particles.find(x=>x.userData.life<=0);
-    if(!p)return;
-    p.position.set(
-      (Math.random()-.5)*1.6,
-      (Math.random()-.5)*1.6,
-      .2
+/* ---------- SCENE MANAGER ---------- */
+
+class SceneManager {
+  constructor() {
+    this.scene = new THREE.Scene();
+
+    this.camera = new THREE.PerspectiveCamera(
+      CONFIG.camera.fov,
+      window.innerWidth / window.innerHeight,
+      CONFIG.camera.near,
+      CONFIG.camera.far
     );
-    p.userData.v.set(
-      (Math.random()-.5)*.035,
-      (Math.random()-.5)*.035,
-      (Math.random()-.5)*.02
+
+    this.camera.position.set(0, 0, CONFIG.camera.z);
+
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true
+    });
+
+    this.renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
     );
-    p.userData.life=1;
-    p.material.color.set(glow.material.color);
-    p.material.opacity=.8;
+
+    this.renderer.setPixelRatio(
+      Math.min(
+        window.devicePixelRatio,
+        CONFIG.render.maxPixelRatio
+      )
+    );
+
+    this.renderer.toneMapping =
+      THREE.ACESFilmicToneMapping;
+
+    this.renderer.toneMappingExposure =
+      CONFIG.render.exposure;
+
+    document.body.appendChild(
+      this.renderer.domElement
+    );
+
+    window.addEventListener(
+      "resize",
+      () => this.resize()
+    );
+  }
+
+  resize() {
+    this.camera.aspect =
+      window.innerWidth / window.innerHeight;
+
+    this.camera.updateProjectionMatrix();
+
+    this.renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
+  }
+
+  render() {
+    this.renderer.render(
+      this.scene,
+      this.camera
+    );
   }
 }
 
-function updateParticles(){
-  for(const p of particles){
-    if(p.userData.life<=0)continue;
-    p.position.add(p.userData.v);
-    p.userData.life-=.025;
-    p.material.opacity=p.userData.life*.7;
+/* ---------- LIGHTING SYSTEM ---------- */
+
+class LightingSystem {
+  constructor(scene) {
+    this.scene = scene;
+
+    this.ambient =
+      new THREE.AmbientLight(
+        0x7f8cff,
+        0.75
+      );
+
+    this.scene.add(this.ambient);
+
+    this.key =
+      new THREE.DirectionalLight(
+        0xffffff,
+        3.1
+      );
+
+    this.key.position.set(
+      3.5,
+      4,
+      5
+    );
+
+    this.scene.add(this.key);
+
+    this.rim =
+      new THREE.DirectionalLight(
+        0x66d9ff,
+        2.7
+      );
+
+    this.rim.position.set(
+      -4,
+      2,
+      -3
+    );
+
+    this.scene.add(this.rim);
+
+    this.warm =
+      new THREE.PointLight(
+        0xff8a35,
+        2.4,
+        7
+      );
+
+    this.warm.position.set(
+      -2.5,
+      -1.5,
+      2
+    );
+
+    this.scene.add(this.warm);
+  }
+
+  update(time, spinPower = 0) {
+
+    this.key.position.x =
+      Math.sin(time * 0.001) * 4;
+
+    this.key.position.y =
+      3 + Math.cos(time * 0.0012);
+
+    this.warm.intensity =
+      2 + spinPower * 10;
   }
 }
 
-function updateTrail(spin,t){
-  for(let i=trailCount-1;i>0;i--){
-    trailPositions[i*3]=trailPositions[(i-1)*3];
-    trailPositions[i*3+1]=trailPositions[(i-1)*3+1];
-    trailPositions[i*3+2]=trailPositions[(i-1)*3+2];
+/* ---------- ENVIRONMENT SYSTEM ---------- */
+
+class EnvironmentSystem {
+  constructor(scene) {
+
+    this.scene = scene;
+
+    this.stars =
+      new THREE.Group();
+
+    this.scene.add(this.stars);
+
+    for (let i = 0; i < 130; i++) {
+
+      const star =
+        new THREE.Mesh(
+
+          new THREE.SphereGeometry(
+            0.006 + Math.random() * 0.015,
+            8,
+            8
+          ),
+
+          new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity:
+              0.18 +
+              Math.random() * 0.4
+          })
+        );
+
+      star.position.set(
+        (Math.random() - 0.5) * 8,
+        (Math.random() - 0.5) * 6,
+        -2 - Math.random() * 5
+      );
+
+      this.stars.add(star);
+    }
   }
 
-  const r=1.15+spin*3;
-  trailPositions[0]=Math.cos(t*.006)*r;
-  trailPositions[1]=Math.sin(t*.005)*r*.65;
-  trailPositions[2]=Math.sin(t*.004)*.4;
+  update(spinPower = 0) {
 
-  trail.geometry.attributes.position.needsUpdate=true;
-  trail.material.opacity=Math.min(.75,.12+spin*4);
+    this.stars.rotation.y +=
+      0.00035 + spinPower * 0.006;
+
+    this.stars.rotation.x +=
+      0.00015;
+  }
 }
 
-function animate(t=0){
-  requestAnimationFrame(animate);
+/* =========================================================
+   SLOT 5 — OBJECT SYSTEMS
+   Future Part 4 will paste BallManager, TrailSystem, ParticleSystem here.
+========================================================= */
 
-  ball.rotation.x+=vx;
-  ball.rotation.y+=vy;
-  ball.rotation.z+=vy*.18;
-  wire.rotation.copy(ball.rotation);
+/* ---------- MATERIAL FACTORY ---------- */
 
-  vx*=dragging?.986:mode.friction;
-  vy*=dragging?.986:mode.friction;
-
-  const spin=Math.min(.18,Math.abs(vx)+Math.abs(vy));
-  const rpm=Math.round(spin*6200);
-
-  if(rpm>best && rpm>400){
-    best=rpm;
-    if(best>900) pulseHaptic(8);
+function createMaterial(ballData) {
+  if (ballData.materialType === "physical") {
+    return new THREE.MeshPhysicalMaterial(ballData.material);
   }
 
-  rpmEl.textContent=rpm;
-  fill.style.width=Math.min(100,rpm/18)+"%";
+  return new THREE.MeshStandardMaterial(ballData.material);
+}
 
-  if(rpm>1000 && Math.random()<.025) spawnParticles(1);
+/* ---------- BALL MANAGER ---------- */
 
-  const squash=1+spin*.75+wobble;
-  const gelBonus=ballType==="gel"?Math.sin(t*.01)*wobble*.9:0;
+class BallManager {
+  constructor(scene) {
+    this.scene = scene;
+    this.type = "glass";
+    this.customTexture = null;
 
-  group.scale.set(
-    1+gelBonus,
-    squash,
-    1-gelBonus*.4
+    this.group = new THREE.Group();
+    this.scene.add(this.group);
+
+    this.geometry = new THREE.SphereGeometry(
+      CONFIG.ball.radius,
+      CONFIG.ball.segments,
+      CONFIG.ball.segments
+    );
+
+    this.materials = {};
+
+    Object.keys(BALLS).forEach(key => {
+      this.materials[key] = createMaterial(BALLS[key]);
+    });
+
+    this.mesh = new THREE.Mesh(
+      this.geometry,
+      this.materials.glass
+    );
+
+    this.group.add(this.mesh);
+
+    this.wire = new THREE.Mesh(
+      this.geometry,
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.08
+      })
+    );
+
+    this.group.add(this.wire);
+
+    this.glow = new THREE.Mesh(
+      new THREE.SphereGeometry(1.09, 64, 64),
+      new THREE.MeshBasicMaterial({
+        color: BALLS.glass.glow,
+        transparent: true,
+        opacity: 0.09
+      })
+    );
+
+    this.group.add(this.glow);
+
+    this.floor = new THREE.Mesh(
+      new THREE.CircleGeometry(1.35, 80),
+      new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.24
+      })
+    );
+
+    this.floor.rotation.x = -Math.PI / 2;
+    this.floor.position.y = -1.35;
+    this.floor.scale.y = 0.22;
+
+    this.scene.add(this.floor);
+  }
+
+  setType(type) {
+    if (!BALLS[type]) return;
+
+    this.type = type;
+    this.mesh.material = this.materials[type];
+
+    this.glow.material.color.set(
+      BALLS[type].glow
+    );
+
+    this.wire.material.opacity =
+      type === "void" ? 0.18 : 0.08;
+
+    UI.ballValue.textContent =
+      BALLS[type].label;
+
+    showToast(`${BALLS[type].label} Ball`);
+  }
+
+  setCustomTexture(texture) {
+    this.customTexture = texture;
+
+    this.materials.custom.map = texture;
+    this.materials.custom.needsUpdate = true;
+
+    this.setType("custom");
+  }
+
+  rotate(xAmount, yAmount, zAmount = 0) {
+    this.mesh.rotation.x += xAmount;
+    this.mesh.rotation.y += yAmount;
+    this.mesh.rotation.z += zAmount;
+
+    this.wire.rotation.copy(
+      this.mesh.rotation
+    );
+  }
+
+  resetRotation() {
+    this.mesh.rotation.set(0, 0, 0);
+    this.wire.rotation.set(0, 0, 0);
+  }
+
+  updateVisuals(time, spinPower = 0, wobble = 0) {
+    const squash =
+      1 + spinPower * 0.75 + wobble;
+
+    const gelBonus =
+      this.type === "gel"
+        ? Math.sin(time * 0.01) * wobble * 0.9
+        : 0;
+
+    this.group.scale.set(
+      1 + gelBonus,
+      squash,
+      1 - gelBonus * 0.4
+    );
+
+    this.group.rotation.z =
+      Math.sin(time * 0.0015) *
+      spinPower *
+      2.2;
+
+    this.glow.material.opacity =
+      0.07 + spinPower * 0.9;
+
+    this.floor.scale.x =
+      1.1 + spinPower * 3;
+
+    this.floor.material.opacity =
+      0.18 + spinPower * 1.2;
+  }
+}
+
+/* ---------- TRAIL SYSTEM ---------- */
+
+class TrailSystem {
+  constructor(scene, ballManager) {
+    this.scene = scene;
+    this.ballManager = ballManager;
+
+    this.count = 140;
+    this.positions =
+      new Float32Array(this.count * 3);
+
+    this.geometry =
+      new THREE.BufferGeometry();
+
+    this.geometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(
+        this.positions,
+        3
+      )
+    );
+
+    this.material =
+      new THREE.PointsMaterial({
+        color: BALLS.glass.glow,
+        size: 0.035,
+        transparent: true,
+        opacity: 0.45,
+        blending: THREE.AdditiveBlending
+      });
+
+    this.points =
+      new THREE.Points(
+        this.geometry,
+        this.material
+      );
+
+    this.scene.add(this.points);
+  }
+
+  update(time, spinPower = 0) {
+    for (let i = this.count - 1; i > 0; i--) {
+      this.positions[i * 3] =
+        this.positions[(i - 1) * 3];
+
+      this.positions[i * 3 + 1] =
+        this.positions[(i - 1) * 3 + 1];
+
+      this.positions[i * 3 + 2] =
+        this.positions[(i - 1) * 3 + 2];
+    }
+
+    const radius =
+      1.15 + spinPower * 3;
+
+    this.positions[0] =
+      Math.cos(time * 0.006) * radius;
+
+    this.positions[1] =
+      Math.sin(time * 0.005) * radius * 0.65;
+
+    this.positions[2] =
+      Math.sin(time * 0.004) * 0.4;
+
+    this.geometry
+      .attributes
+      .position
+      .needsUpdate = true;
+
+    this.material.opacity =
+      Math.min(0.75, 0.12 + spinPower * 4);
+
+    this.material.color.set(
+      BALLS[this.ballManager.type].glow
+    );
+  }
+}
+
+/* ---------- PARTICLE SYSTEM ---------- */
+
+class ParticleSystem {
+  constructor(scene, ballManager) {
+    this.scene = scene;
+    this.ballManager = ballManager;
+    this.particles = [];
+
+    this.geometry =
+      new THREE.SphereGeometry(
+        0.018,
+        8,
+        8
+      );
+
+    for (let i = 0; i < 42; i++) {
+      const particle =
+        new THREE.Mesh(
+          this.geometry,
+          new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0
+          })
+        );
+
+      particle.userData.life = 0;
+      particle.userData.velocity =
+        new THREE.Vector3();
+
+      this.scene.add(particle);
+      this.particles.push(particle);
+    }
+  }
+
+  spawn(amount = 8) {
+    for (let i = 0; i < amount; i++) {
+      const particle =
+        this.particles.find(
+          item => item.userData.life <= 0
+        );
+
+      if (!particle) return;
+
+      particle.position.set(
+        (Math.random() - 0.5) * 1.6,
+        (Math.random() - 0.5) * 1.6,
+        0.2
+      );
+
+      particle.userData.velocity.set(
+        (Math.random() - 0.5) * 0.035,
+        (Math.random() - 0.5) * 0.035,
+        (Math.random() - 0.5) * 0.02
+      );
+
+      particle.userData.life = 1;
+
+      particle.material.color.set(
+        BALLS[this.ballManager.type].glow
+      );
+
+      particle.material.opacity = 0.8;
+    }
+  }
+
+  update() {
+    this.particles.forEach(particle => {
+      if (particle.userData.life <= 0) return;
+
+      particle.position.add(
+        particle.userData.velocity
+      );
+
+      particle.userData.life -= 0.025;
+
+      particle.material.opacity =
+        particle.userData.life * 0.7;
+    });
+  }
+}
+
+/* =========================================================
+   SLOT 6 — INTERACTION + PHYSICS SYSTEMS
+   Future Part 5 will paste SpinPhysics + Input handling here.
+========================================================= */
+
+/* ---------- SPIN PHYSICS ---------- */
+
+class SpinPhysics {
+  constructor(ballManager, particleSystem) {
+    this.ball = ballManager;
+    this.particles = particleSystem;
+
+    this.mode = MODES.smooth;
+
+    this.vx = 0.006;
+    this.vy = 0.012;
+
+    this.dragging = false;
+    this.lastX = 0;
+    this.lastY = 0;
+    this.lastT = 0;
+
+    this.wobble = 0;
+    this.rpm = 0;
+    this.best = 0;
+
+    this.flickPower = 0;
+    this.lastDirection = 0;
+
+    this.bindInput();
+  }
+
+  setMode(modeName) {
+    if (!MODES[modeName]) return;
+
+    this.mode = MODES[modeName];
+    showToast(`${this.mode.label} Mode`);
+  }
+
+  bindInput() {
+    window.addEventListener("pointerdown", event => {
+      this.dragging = true;
+      this.lastX = event.clientX;
+      this.lastY = event.clientY;
+      this.lastT = performance.now();
+    });
+
+    window.addEventListener("pointermove", event => {
+      if (!this.dragging) return;
+
+      const now = performance.now();
+      const dt = Math.max(12, now - this.lastT);
+
+      const dx = event.clientX - this.lastX;
+      const dy = event.clientY - this.lastY;
+
+      this.vx =
+        (dy / dt) *
+        this.mode.sensitivity /
+        this.mode.weight;
+
+      this.vy =
+        (dx / dt) *
+        this.mode.sensitivity /
+        this.mode.weight;
+
+      this.ball.rotate(
+        this.vx,
+        this.vy,
+        this.vy * 0.18
+      );
+
+      const flickStrength =
+        Math.abs(dx) + Math.abs(dy);
+
+      this.flickPower = flickStrength;
+
+      this.wobble = Math.min(
+        0.18,
+        flickStrength *
+          0.0025 *
+          this.mode.wobble *
+          8
+      );
+
+      if (flickStrength > 55) {
+        this.particles.spawn(6);
+      }
+
+      this.lastDirection = Math.sign(dx || 1);
+
+      this.lastX = event.clientX;
+      this.lastY = event.clientY;
+      this.lastT = now;
+    });
+
+    window.addEventListener("pointerup", () => {
+  this.dragging = false;
+
+  window.dispatchEvent(
+    new CustomEvent("spincore:flick", {
+      detail: {
+        flickPower: this.flickPower,
+        rpm: this.rpm,
+        direction: this.lastDirection
+      }
+    })
   );
+});
 
-  group.rotation.z=Math.sin(t*.0015)*spin*2.2;
-  glow.material.opacity=.07+spin*.9;
-  floor.scale.x=1.1+spin*3;
-  floor.material.opacity=.18+spin*1.2;
+  impulse() {
+    this.vx +=
+      (Math.random() - 0.5) * 0.18;
 
-  key.position.x=Math.sin(t*.001)*4;
-  key.position.y=3+Math.cos(t*.0012);
-  warm.intensity=2+spin*10;
+    this.vy +=
+      (Math.random() > 0.5 ? 1 : -1) * 0.22;
 
-  stars.rotation.y+=.00035+spin*.006;
-  stars.rotation.x+=.00015;
+    this.wobble = 0.16;
+    this.flickPower = 100;
 
-  updateTrail(spin,t);
-  updateParticles();
+    this.particles.spawn(22);
+    showToast("Impulse");
+    haptic(35);
+  }
 
-  renderer.render(scene,camera);
+  brake() {
+    this.vx *= 0.18;
+    this.vy *= 0.18;
+
+    showToast("Brake");
+    haptic(12);
+  }
+
+  reset() {
+    this.vx = 0.006;
+    this.vy = 0.012;
+    this.wobble = 0;
+    this.rpm = 0;
+    this.best = 0;
+    this.flickPower = 0;
+
+    this.ball.resetRotation();
+
+    showToast("Reset");
+  }
+
+  update() {
+    this.ball.rotate(
+      this.vx,
+      this.vy,
+      this.vy * 0.18
+    );
+
+    this.vx *= this.dragging
+      ? 0.986
+      : this.mode.friction;
+
+    this.vy *= this.dragging
+      ? 0.986
+      : this.mode.friction;
+
+    this.wobble *= 0.94;
+    this.flickPower *= 0.92;
+
+    const spinPower =
+      Math.min(
+        0.18,
+        Math.abs(this.vx) + Math.abs(this.vy)
+      );
+
+    this.rpm =
+      Math.round(
+        spinPower * CONFIG.rpm.multiplier
+      );
+
+    if (this.rpm > this.best) {
+      this.best = this.rpm;
+    }
+
+    return {
+      spinPower,
+      wobble: this.wobble,
+      rpm: this.rpm,
+      best: this.best,
+      flickPower: this.flickPower,
+      direction: this.lastDirection
+    };
+  }
 }
 
-animate();
+/* =========================================================
+   SLOT 7 — GAME SYSTEMS
+   Future Part 6 will paste ComboSystem, UnlockSystem, SaveSystem here.
+========================================================= */
 
-addEventListener("resize",()=>{
-  camera.aspect=innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-});
+/* ---------- SAVE SYSTEM ---------- */
+
+class SaveSystem {
+  constructor() {
+    this.key = "spincore_save_v1";
+
+    this.data = {
+      bestRPM: 0,
+      totalFlicks: 0,
+      bestCombo: 0,
+      unlocked: {
+        glass: true,
+        chrome: true,
+        lava: true,
+        void: true,
+        gel: true,
+        custom: true
+      }
+    };
+
+    this.load();
+  }
+
+  load() {
+    const saved = localStorage.getItem(this.key);
+    if (!saved) return;
+
+    try {
+      this.data = {
+        ...this.data,
+        ...JSON.parse(saved)
+      };
+    } catch {
+      console.warn("Save data could not be loaded.");
+    }
+  }
+
+  save() {
+    localStorage.setItem(
+      this.key,
+      JSON.stringify(this.data)
+    );
+  }
+
+  updateBestRPM(rpm) {
+    if (rpm <= this.data.bestRPM) return false;
+
+    this.data.bestRPM = rpm;
+    this.save();
+    return true;
+  }
+
+  updateBestCombo(combo) {
+    if (combo <= this.data.bestCombo) return false;
+
+    this.data.bestCombo = combo;
+    this.save();
+    return true;
+  }
+
+  addFlick() {
+    this.data.totalFlicks += 1;
+    this.save();
+  }
+}
+
+/* ---------- COMBO SYSTEM ---------- */
+
+class ComboSystem {
+  constructor(saveSystem) {
+    this.save = saveSystem;
+
+    this.combo = 0;
+    this.comboTimer = 0;
+    this.lastDirection = 0;
+    this.lastRPM = 0;
+  }
+
+  onFlick(spinState) {
+    const power = spinState.flickPower;
+    const rpm = spinState.rpm;
+    const direction = spinState.direction;
+
+    if (power < 55) return;
+
+    this.save.addFlick();
+
+    const reversed =
+      this.lastDirection !== 0 &&
+      direction !== this.lastDirection;
+
+    const strongFlick = power > 90;
+    const highRPM = rpm > 650;
+
+    let gained = 1;
+
+    if (reversed) gained += 1;
+    if (strongFlick) gained += 1;
+    if (highRPM) gained += 1;
+
+    this.combo += gained;
+    this.comboTimer = 140;
+
+    this.lastDirection = direction;
+    this.lastRPM = rpm;
+
+    this.save.updateBestCombo(this.combo);
+
+    if (this.combo >= 8) {
+      showToast(`Flow x${this.combo}`);
+      haptic(45);
+    } else if (reversed) {
+      showToast("Reverse Flick");
+      haptic(30);
+    } else if (strongFlick) {
+      showToast("Power Flick");
+      haptic(28);
+    } else {
+      showToast(`Combo x${this.combo}`);
+      haptic(18);
+    }
+  }
+
+  update() {
+    if (this.comboTimer > 0) {
+      this.comboTimer -= 1;
+    } else if (this.combo > 0) {
+      this.combo = Math.max(0, this.combo - 1);
+      this.comboTimer = 45;
+    }
+
+    return {
+      combo: this.combo,
+      bestCombo: this.save.data.bestCombo
+    };
+  }
+
+  reset() {
+    this.combo = 0;
+    this.comboTimer = 0;
+  }
+}
+
+/* ---------- UNLOCK SYSTEM ---------- */
+
+class UnlockSystem {
+  constructor(saveSystem) {
+    this.save = saveSystem;
+  }
+
+  check(spinState, comboState) {
+    const rpm = spinState.rpm;
+    const combo = comboState.combo;
+
+    this.unlockByRPM("chrome", rpm, 500);
+    this.unlockByRPM("lava", rpm, 900);
+    this.unlockByRPM("void", rpm, 1200);
+
+    if (combo >= 3) {
+      this.unlock("gel");
+    }
+  }
+
+  unlockByRPM(ball, rpm, target) {
+    if (rpm >= target) {
+      this.unlock(ball);
+    }
+  }
+
+  unlock(ball) {
+    if (this.save.data.unlocked[ball]) return;
+
+    this.save.data.unlocked[ball] = true;
+    this.save.save();
+
+    showToast(`Unlocked ${BALLS[ball].label}`);
+    haptic(60);
+  }
+}
+
+/* =========================================================
+   SLOT 8 — IMAGE UPLOAD SYSTEM
+   Future Part 7 will paste UploadSystem here.
+========================================================= */
+
+/* ---------- IMAGE UPLOAD SYSTEM ---------- */
+
+class UploadSystem {
+  constructor(ballManager) {
+    this.ballManager = ballManager;
+    this.loader = new THREE.TextureLoader();
+
+    this.bindUpload();
+    
+    this.uploadSystem = new UploadSystem(this.ballManager);
+  }
+
+  bindUpload() {
+    const uploadInput =
+      document.getElementById("imageUpload");
+
+    uploadInput.addEventListener("change", event => {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        showToast("Use an image file");
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = loadEvent => {
+        this.createTexture(loadEvent.target.result);
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  createTexture(imageDataUrl) {
+    this.loader.load(
+      imageDataUrl,
+      texture => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+
+        texture.repeat.set(1, 1);
+        texture.offset.set(0, 0);
+
+        this.ballManager.setCustomTexture(texture);
+
+        showToast("Custom Skin");
+        haptic(40);
+      },
+      undefined,
+      () => {
+        showToast("Upload Failed");
+      }
+    );
+  }
+}
+
+/* =========================================================
+   SLOT 9 — UI MANAGER
+   Future Part 8 will paste UIManager here.
+========================================================= */
+
+class UIManager {
+  constructor(ballManager, physics, comboSystem) {
+    this.ballManager = ballManager;
+    this.physics = physics;
+    this.comboSystem = comboSystem;
+
+    this.bindBallButtons();
+    this.bindModeButtons();
+    this.bindActionButtons();
+  }
+
+  bindBallButtons() {
+    document
+      .getElementById("ballButtons")
+      .addEventListener("click", event => {
+        if (event.target.tagName !== "BUTTON") return;
+
+        const ballType = event.target.dataset.ball;
+
+        setActiveButton("#ballButtons", event.target);
+        this.ballManager.setType(ballType);
+      });
+  }
+
+  bindModeButtons() {
+    document
+      .getElementById("modeButtons")
+      .addEventListener("click", event => {
+        if (event.target.tagName !== "BUTTON") return;
+
+        const modeType = event.target.dataset.mode;
+
+        setActiveButton("#modeButtons", event.target);
+        this.physics.setMode(modeType);
+      });
+  }
+
+  bindActionButtons() {
+    document
+      .getElementById("boostButton")
+      .addEventListener("click", () => {
+        this.physics.impulse();
+      });
+
+    document
+      .getElementById("brakeButton")
+      .addEventListener("click", () => {
+        this.physics.brake();
+      });
+
+    document
+      .getElementById("resetButton")
+      .addEventListener("click", () => {
+        this.physics.reset();
+        this.comboSystem.reset();
+
+        UI.comboValue.textContent = 0;
+        showToast("Reset");
+      });
+  }
+
+  update(spinState, comboState, saveData) {
+    UI.rpmValue.textContent = spinState.rpm;
+    UI.bestValue.textContent = Math.max(
+      spinState.best,
+      saveData.bestRPM
+    );
+
+    UI.comboValue.textContent = comboState.combo;
+
+    UI.rpmFill.style.width =
+      `${Math.min(
+        100,
+        spinState.rpm / CONFIG.rpm.meterDivisor
+      )}%`;
+  }
+}
+
+/* =========================================================
+   SLOT 10 — APP START
+   Future final part will paste SpinCoreApp here.
+========================================================= */
+
+/* ---------- APP START ---------- */
+
+class SpinCoreApp {
+  constructor() {
+    this.sceneManager = new SceneManager();
+
+    this.lightingSystem =
+      new LightingSystem(this.sceneManager.scene);
+
+    this.environmentSystem =
+      new EnvironmentSystem(this.sceneManager.scene);
+
+    this.ballManager =
+      new BallManager(this.sceneManager.scene);
+
+    this.trailSystem =
+      new TrailSystem(
+        this.sceneManager.scene,
+        this.ballManager
+      );
+
+    this.particleSystem =
+      new ParticleSystem(
+        this.sceneManager.scene,
+        this.ballManager
+      );
+
+    this.physics =
+      new SpinPhysics(
+        this.ballManager,
+        this.particleSystem
+      );
+
+    this.saveSystem =
+      new SaveSystem();
+
+    this.comboSystem =
+      new ComboSystem(this.saveSystem);
+
+    this.unlockSystem =
+      new UnlockSystem(this.saveSystem);
+
+    this.uploadSystem =
+      new UploadSystem(this.ballManager);
+
+    this.uiManager =
+      new UIManager(
+        this.ballManager,
+        this.physics,
+        this.comboSystem
+      );
+
+    window.addEventListener(
+      "spincore:flick",
+      event => {
+        this.comboSystem.onFlick(event.detail);
+      }
+    );
+
+    showToast("SpinCore Ready");
+    this.animate();
+  }
+
+  animate(time = 0) {
+    requestAnimationFrame(
+      nextTime => this.animate(nextTime)
+    );
+
+    const spinState =
+      this.physics.update();
+
+    const comboState =
+      this.comboSystem.update();
+
+    this.saveSystem.updateBestRPM(
+      spinState.rpm
+    );
+
+    this.unlockSystem.check(
+      spinState,
+      comboState
+    );
+
+    this.ballManager.updateVisuals(
+      time,
+      spinState.spinPower,
+      spinState.wobble
+    );
+
+    this.trailSystem.update(
+      time,
+      spinState.spinPower
+    );
+
+    this.particleSystem.update();
+
+    this.environmentSystem.update(
+      spinState.spinPower
+    );
+
+    this.lightingSystem.update(
+      time,
+      spinState.spinPower
+    );
+
+    this.uiManager.update(
+      spinState,
+      comboState,
+      this.saveSystem.data
+    );
+
+    this.sceneManager.render();
+  }
+}
+
+new SpinCoreApp();
+
 </script>
+
 </body>
 </html>
