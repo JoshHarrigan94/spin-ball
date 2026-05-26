@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spinning Ball</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at top, #243b55, #141e30 60%, #080b12);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      color: white;
+      touch-action: none;
+    }
+
+    .app {
+      text-align: center;
+      user-select: none;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    p {
+      margin-top: 0;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+
+    .scene {
+      width: 280px;
+      height: 280px;
+      perspective: 900px;
+      margin: 2rem auto;
+      display: grid;
+      place-items: center;
+    }
+
+    .ball {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      position: relative;
+      transform-style: preserve-3d;
+      background:
+        radial-gradient(circle at 30% 25%, #ffffff, #76d7ff 12%, #1b8dff 38%, #0753b8 72%, #021b45);
+      box-shadow:
+        inset -35px -35px 55px rgba(0, 0, 0, 0.45),
+        inset 25px 25px 45px rgba(255, 255, 255, 0.25),
+        0 35px 70px rgba(0, 0, 0, 0.55);
+    }
+
+    .ball::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border-radius: 50%;
+      background:
+        linear-gradient(90deg, transparent 48%, rgba(255,255,255,0.18) 49%, transparent 51%),
+        linear-gradient(0deg, transparent 48%, rgba(255,255,255,0.14) 49%, transparent 51%);
+      background-size: 42px 42px;
+      opacity: 0.55;
+      mix-blend-mode: screen;
+      transform: translateZ(8px);
+    }
+
+    .ball::after {
+      content: "";
+      position: absolute;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      top: 34px;
+      left: 45px;
+      background: rgba(255, 255, 255, 0.65);
+      filter: blur(8px);
+    }
+
+    .shadow {
+      width: 180px;
+      height: 34px;
+      background: rgba(0,0,0,0.38);
+      border-radius: 50%;
+      filter: blur(10px);
+      margin: -1rem auto 1.5rem;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.8rem 1.2rem;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      backdrop-filter: blur(12px);
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16);
+    }
+
+    button:active {
+      transform: scale(0.96);
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>Spinning Ball</h1>
+    <p>Drag it. Flick it. Spin it.</p>
+
+    <div class="scene" id="scene">
+      <div class="ball" id="ball"></div>
+    </div>
+
+    <div class="shadow"></div>
+
+    <button id="reset">Reset Spin</button>
+  </main>
+
+  <script>
+    const ball = document.getElementById("ball");
+    const scene = document.getElementById("scene");
+    const reset = document.getElementById("reset");
+
+    let rotationX = -15;
+    let rotationY = 25;
+    let velocityX = 0;
+    let velocityY = 0;
+
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function updateBall() {
+      rotationX += velocityX;
+      rotationY += velocityY;
+
+      velocityX *= 0.96;
+      velocityY *= 0.96;
+
+      ball.style.transform = `
+        rotateX(${rotationX}deg)
+        rotateY(${rotationY}deg)
+      `;
+
+      requestAnimationFrame(updateBall);
+    }
+
+    function pointerDown(e) {
+      isDragging = true;
+      lastX = e.clientX || e.touches?.[0]?.clientX;
+      lastY = e.clientY || e.touches?.[0]?.clientY;
+    }
+
+    function pointerMove(e) {
+      if (!isDragging) return;
+
+      const x = e.clientX || e.touches?.[0]?.clientX;
+      const y = e.clientY || e.touches?.[0]?.clientY;
+
+      const dx = x - lastX;
+      const dy = y - lastY;
+
+      velocityY = dx * 0.45;
+      velocityX = -dy * 0.45;
+
+      rotationY += velocityY;
+      rotationX += velocityX;
+
+      lastX = x;
+      lastY = y;
+    }
+
+    function pointerUp() {
+      isDragging = false;
+    }
+
+    scene.addEventListener("pointerdown", pointerDown);
+    window.addEventListener("pointermove", pointerMove);
+    window.addEventListener("pointerup", pointerUp);
+
+    reset.addEventListener("click", () => {
+      rotationX = -15;
+      rotationY = 25;
+      velocityX = 0;
+      velocityY = 0;
+    });
+
+    updateBall();
+  </script>
+</body>
+</html>
