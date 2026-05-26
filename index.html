@@ -1311,17 +1311,18 @@ this.vy =
   this.dragging = false;
 
   window.dispatchEvent(
-  new CustomEvent("spincore:flick", {
-    detail: {
-      flickPower: this.flickPower,
-      rpm: this.rpm,
-      direction: this.lastDirection,
-      vx: this.vx,
-      vy: this.vy
-    }
-  })
-);
+    new CustomEvent("spincore:flick", {
+      detail: {
+        flickPower: this.flickPower,
+        rpm: this.rpm,
+        direction: this.lastDirection,
+        vx: this.vx,
+        vy: this.vy
+      }
+    })
+  );
 });
+}
 
   impulse() {
     this.updateBallFeel();
